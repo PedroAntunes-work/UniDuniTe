@@ -1,5 +1,5 @@
-require("dotenv").config();
-const createApp = require("./app");
+import "dotenv/config";
+import createApp from "./app";
 
 const port = Number(process.env.PORT) || 3001;
 const app = createApp();

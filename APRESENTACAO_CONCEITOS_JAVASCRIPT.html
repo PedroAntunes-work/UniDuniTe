@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10151d">
+  <title>JavaScript em ação · UniDuniTê</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #10151d;
+      --panel: #181f2a;
+      --panel-soft: #202a37;
+      --text: #f4f6fa;
+      --muted: #aab5c4;
+      --line: #344151;
+      --mint: #72f0c2;
+      --violet: #bba4ff;
+      --yellow: #ffd479;
+      --coral: #ff907d;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      overflow: hidden;
+    }
+    button { font: inherit; }
+    .deck { height: 100%; position: relative; }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      align-items: center;
+      padding: clamp(28px, 6vw, 88px) clamp(24px, 8vw, 124px) 92px;
+      opacity: 0;
+      transform: translateX(28px);
+      visibility: hidden;
+      transition: opacity .34s ease, transform .34s ease, visibility .34s;
+      overflow-y: auto;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      visibility: visible;
+    }
+    .content { width: min(1120px, 100%); margin: auto; }
+    .eyebrow {
+      color: var(--mint);
+      font: 700 .76rem/1.2 var(--mono);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin: 0 0 18px;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 900px;
+      margin-bottom: 22px;
+      font-size: clamp(3.1rem, 8vw, 7.4rem);
+      letter-spacing: -.075em;
+      line-height: .98;
+    }
+    h2 {
+      margin-bottom: 14px;
+      font-size: clamp(2rem, 5vw, 4.25rem);
+      letter-spacing: -.055em;
+      line-height: 1.04;
+    }
+    h3 { font-size: 1.08rem; margin-bottom: 10px; }
+    .lead {
+      max-width: 760px;
+      color: var(--muted);
+      font-size: clamp(1.12rem, 2vw, 1.45rem);
+      line-height: 1.55;
+    }
+    .accent { color: var(--mint); }
+    .accent-violet { color: var(--violet); }
+    .accent-yellow { color: var(--yellow); }
+    .accent-coral { color: var(--coral); }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-top: 24px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: .86rem;
+    }
+    .tag::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--mint);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 30px;
+    }
+    .grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(145deg, rgba(32,42,55,.88), rgba(24,31,42,.88));
+    }
+    .card p, .card li { color: var(--muted); line-height: 1.55; }
+    .card p:last-child { margin-bottom: 0; }
+    .card ul { margin: 10px 0 0; padding-left: 20px; }
+    .card li + li { margin-top: 7px; }
+    .number {
+      display: block;
+      color: var(--mint);
+      font: 700 .75rem var(--mono);
+      margin-bottom: 14px;
+    }
+    .code {
+      overflow-x: auto;
+      padding: 19px 21px;
+      border: 1px solid #334151;
+      border-radius: 14px;
+      background: #0b1016;
+      color: #deebf5;
+      font: .91rem/1.7 var(--mono);
+      white-space: pre;
+    }
+    .code .comment { color: #8292a5; }
+    .code .kw { color: var(--violet); }
+    .code .fn { color: var(--mint); }
+    .code .str { color: var(--yellow); }
+    .split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+      align-items: center;
+      gap: clamp(24px, 5vw, 66px);
+      margin-top: 30px;
+    }
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 9px;
+      margin: 24px 0;
+    }
+    .flow span {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      font: .84rem var(--mono);
+    }
+    .flow b { color: var(--mint); }
+    .quote {
+      padding: 19px 22px;
+      border-left: 3px solid var(--mint);
+      background: rgba(114,240,194,.07);
+      color: #dce5ed;
+      line-height: 1.55;
+    }
+    .quiet { color: var(--muted); }
+    .big-idea {
+      max-width: 900px;
+      font-size: clamp(2rem, 4.7vw, 4.4rem);
+      letter-spacing: -.055em;
+      line-height: 1.15;
+    }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .pill {
+      padding: 9px 13px;
+      border-radius: 9px;
+      background: var(--panel-soft);
+      color: #d5dfeb;
+      font: .82rem var(--mono);
+    }
+    .footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 17px clamp(20px, 4vw, 56px);
+      background: linear-gradient(transparent, rgba(16,21,29,.96) 28%);
+    }
+    .progress-track {
+      height: 3px;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 9px;
+      background: #303a47;
+    }
+    .progress {
+      height: 100%;
+      width: 0;
+      background: var(--mint);
+      transition: width .3s ease;
+    }
+    .counter { min-width: 58px; color: var(--muted); font: .75rem var(--mono); }
+    .controls { display: flex; gap: 8px; }
+    .controls button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .controls button:hover { border-color: var(--mint); color: var(--mint); }
+    .controls button:disabled { opacity: .35; cursor: default; }
+    .hint { color: #8390a0; font-size: .75rem; }
+    @media (max-width: 760px) {
+      .slide { padding: 42px 22px 95px; }
+      .grid, .grid.three, .split { grid-template-columns: 1fr; }
+      .grid { gap: 11px; margin-top: 20px; }
+      .card { padding: 17px; }
+      .split { gap: 18px; margin-top: 20px; }
+      .code { font-size: .78rem; }
+      .hint { display: none; }
+      .footer { gap: 10px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck" aria-label="Apresentação: JavaScript em ação no UniDuniTê">
+    <section class="slide active" aria-label="Slide 1">
+      <div class="content">
+        <p class="eyebrow">Fundamentos de JavaScript · Aula 1</p>
+        <h1>JavaScript<br><span class="accent">em ação.</span></h1>
+        <p class="lead">Como os conceitos da linguagem aparecem no UniDuniTê — da validação de nomes ao sorteio de grupos.</p>
+        <span class="tag">Conceitos ligados ao código real do projeto</span>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 2">
+      <div class="content">
+        <p class="eyebrow">O projeto</p>
+        <h2>Uma aplicação.<br><span class="accent">Dois lados.</span></h2>
+        <p class="lead">O UniDuniTê cadastra participantes e os divide aleatoriamente em grupos equilibrados.</p>
+        <div class="split">
+          <div>
+            <div class="flow" aria-label="Fluxo de dados do backend">
+              <span>interface React</span><b>→</b><span>API Express</span><b>→</b><span>serviço</span><b>→</b><span>SQLite</span>
+            </div>
+            <p class="quiet">O frontend também transforma e valida listas antes de mostrar resultados e prévias de importação.</p>
+          </div>
+          <div class="card">
+            <span class="number">IDEIA-CHAVE</span>
+            <h3>Conceito não é enfeite</h3>
+            <p>Cada recurso da linguagem ajuda a resolver uma necessidade concreta — com validação no navegador e no servidor.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 3">
+      <div class="content">
+        <p class="eyebrow">01 · Tipos, conversão e validação</p>
+        <h2>Formulário entrega texto.<br><span class="accent">O sorteio precisa de números.</span></h2>
+        <div class="split">
+          <div class="code"><span class="comment">// App.js — os campos chegam como strings</span>
+const min = <span class="fn">Number</span>(minInput);
+const max = <span class="fn">Number</span>(maxInput);
+
+if (!<span class="fn">Number.isInteger</span>(min) ||
+    !<span class="fn">Number.isInteger</span>(max)) {
+  <span class="comment">// interrompe e informa a pessoa</span>
+}</div>
+          <div>
+            <div class="card">
+              <h3>Também na importação</h3>
+              <p>Nomes são normalizados, comparados sem diferenciar maiúsculas/minúsculas e rejeitados se vazios, duplicados ou longos demais.</p>
+            </div>
+            <p class="quote">Comparações estritas (`===`, `!==`) evitam surpresas de conversões implícitas.</p>
+            <p class="quiet">O backend valida novamente: as regras não dependem só do navegador.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 4">
+      <div class="content">
+        <p class="eyebrow">02 · Truthy, falsy e valores opcionais</p>
+        <h2>Ausência também<br><span class="accent-violet">é um estado.</span></h2>
+        <div class="grid three">
+          <article class="card">
+            <span class="number">ESTADO VAZIO</span>
+            <h3>Sem participantes</h3>
+            <p>O sorteio é interrompido com uma mensagem clara, em vez de tentar produzir grupos sem dados.</p>
+          </article>
+          <article class="card">
+            <span class="number">VALOR PADRÃO</span>
+            <h3><code>??</code> e <code>||</code></h3>
+            <p>Configurações opcionais recebem um padrão quando necessário; cada operador tem uma regra diferente para valores falsy.</p>
+          </article>
+          <article class="card">
+            <span class="number">ACESSO SEGURO</span>
+            <h3><code>?.</code></h3>
+            <p>Detalhes de erro que talvez não existam podem ser consultados sem disparar uma segunda exceção.</p>
+          </article>
+        </div>
+        <p class="quiet" style="margin-top:18px">A área de resultados também tem um estado inicial antes do primeiro sorteio.</p>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 5">
+      <div class="content">
+        <p class="eyebrow">03 · const, let e escopo de bloco</p>
+        <h2>Estável por padrão.<br><span class="accent">Mutável quando precisa.</span></h2>
+        <div class="split">
+          <div class="card">
+            <span class="number">NO PROJETO</span>
+            <h3><code>const</code> para referências estáveis</h3>
+            <p><code>let</code> aparece em mudanças controladas, como o índice do embaralhamento ou um motivo de rejeição calculado durante a operação.</p>
+            <p>O projeto não usa <code>var</code>.</p>
+          </div>
+          <div>
+            <div class="code"><span class="comment">// Fisher–Yates simplificado</span>
+const shuffled = [...values];
+for (let i = shuffled.length - 1; i > 0; i--) {
+  <span class="comment">// troca posições na cópia</span>
+}</div>
+            <p class="quote">A lista original continua na ordem do painel; o resultado sorteado aparece nos grupos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 6">
+      <div class="content">
+        <p class="eyebrow">04 · Funções, callbacks e closures</p>
+        <h2>Ações da interface<br><span class="accent-yellow">viram funções.</span></h2>
+        <div class="grid">
+          <article class="card">
+            <span class="number">CALLBACKS</span>
+            <h3>Responder a eventos</h3>
+            <p><code>onClick</code>, <code>onChange</code> e <code>onSubmit</code> conectam botões e formulários às operações de adicionar, sortear e editar.</p>
+          </article>
+          <article class="card">
+            <span class="number">FUNÇÕES DE ORDEM SUPERIOR</span>
+            <h3>Transformar coleções</h3>
+            <p><code>map</code>, <code>filter</code>, <code>forEach</code> e <code>some</code> recebem callbacks para percorrer e verificar listas.</p>
+          </article>
+        </div>
+        <div class="split">
+          <p class="big-idea">Uma closure permite ao callback acessar o <span class="accent-yellow">estado e os índices</span> da renderização em que foi criado.</p>
+          <p class="quiet">Na edição de grupos, a ação de mover alguém conhece o grupo de origem e o destino sem depender de variáveis globais.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 7">
+      <div class="content">
+        <p class="eyebrow">05 · Objetos, arrays e coleções</p>
+        <h2>Dados organizados<br><span class="accent-violet">para cada tarefa.</span></h2>
+        <div class="split">
+          <div class="card">
+            <h3>Participante é objeto. Grupo é array.</h3>
+            <p>Métodos de coleção deixam a intenção visível:</p>
+            <div class="pill-row">
+              <span class="pill">map → construir</span>
+              <span class="pill">filter → selecionar</span>
+              <span class="pill">some → verificar</span>
+              <span class="pill">forEach → processar</span>
+              <span class="pill">Set → detectar duplicatas</span>
+            </div>
+          </div>
+          <div>
+            <p class="big-idea">A mesma estrutura de dados alimenta a <span class="accent-violet">lista numerada</span>, a prévia de importação e os cartões de grupo.</p>
+            <p class="quiet">A distribuição garante que cada participante entre uma vez; limites ajudam a manter os grupos equilibrados.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 8">
+      <div class="content">
+        <p class="eyebrow">06 · Cópia, referência e spread</p>
+        <h2>Editar sem estragar<br><span class="accent">o original.</span></h2>
+        <div class="split">
+          <div class="code"><span class="comment">// uma nova lista para embaralhar</span>
+const copy = [...participants];
+
+<span class="comment">// um novo objeto de estado</span>
+return { ...state, revealed: next };
+
+<span class="comment">// uma nova lista de grupos para editar</span>
+const draft = teams.map(team => [...team]);</div>
+          <div>
+            <h3>O fluxo de edição deixa isso visível</h3>
+            <div class="flow">
+              <span>Editar</span><b>→</b><span>rascunho</span><b>→</b><span>Salvar</span>
+            </div>
+            <p class="quiet">Mover participantes altera a cópia. Salvar aplica; Cancelar descarta. Novas referências também permitem ao React detectar atualizações.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 9">
+      <div class="content">
+        <p class="eyebrow">07 · Assincronismo, Promises e async/await</p>
+        <h2>Esperar sem<br><span class="accent">congelar a interface.</span></h2>
+        <div class="split">
+          <div>
+            <div class="code"><span class="kw">async function</span> <span class="fn">loadParticipants</span>() {
+  setBusy(true);
+  try {
+    const data = <span class="kw">await</span> participantsApi.list();
+    setParticipants(data);
+  } <span class="kw">finally</span> {
+    setBusy(false);
+  }
+}</div>
+            <p class="quiet">O exemplo resume o padrão: aguardar a API e sempre liberar o estado de carregamento.</p>
+          </div>
+          <div class="card">
+            <span class="number">ONDE ACONTECE</span>
+            <h3>API, arquivo e controlador</h3>
+            <ul>
+              <li><code>fetch</code> busca e interpreta respostas HTTP.</li>
+              <li><code>file.text()</code> lê o arquivo antes da prévia.</li>
+              <li>Controladores aguardam serviços antes da resposta.</li>
+            </ul>
+            <p>Na interface, carregamento e controles desabilitados tornam a espera explícita.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 10">
+      <div class="content">
+        <p class="eyebrow">08 · Tratamento de erros</p>
+        <h2>Falha não é<br><span class="accent-coral">sucesso disfarçado.</span></h2>
+        <div class="grid three">
+          <article class="card">
+            <span class="number">FRONTEND</span>
+            <h3>Informar e recuperar</h3>
+            <p>A interface mostra o problema e libera o estado de atividade, inclusive quando a chamada falha.</p>
+          </article>
+          <article class="card">
+            <span class="number">SERVIÇO</span>
+            <h3>Regras explícitas</h3>
+            <p>Dados inválidos e nomes duplicados viram erros conhecidos, não atualizações silenciosas.</p>
+          </article>
+          <article class="card">
+            <span class="number">API</span>
+            <h3>Resposta estruturada</h3>
+            <p>O middleware converte erros conhecidos em respostas adequadas e registra falhas inesperadas.</p>
+          </article>
+        </div>
+        <p class="quote" style="margin-top:18px">Exemplo: nome duplicado aparece como duplicidade — o campo não é tratado como se a inclusão tivesse dado certo.</p>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 11">
+      <div class="content">
+        <p class="eyebrow">09 · Módulos: ESM e CommonJS</p>
+        <h2>Responsabilidades separadas.<br><span class="accent-violet">Formatos diferentes.</span></h2>
+        <div class="grid">
+          <article class="card">
+            <span class="number">FRONTEND · ESM</span>
+            <h3><code>import</code> / <code>export</code></h3>
+            <p>O componente principal reúne painéis, seletor de tema e utilitários importados de arquivos próprios.</p>
+          </article>
+          <article class="card">
+            <span class="number">BACKEND · COMMONJS</span>
+            <h3><code>require</code> / <code>module.exports</code></h3>
+            <p>O pacote configura CommonJS; rotas, serviços e repositórios separam a API da persistência e das regras.</p>
+          </article>
+        </div>
+        <div class="flow">
+          <span>rota</span><b>→</b><span>controlador</span><b>→</b><span>serviço</span><b>→</b><span>repositório</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 12">
+      <div class="content">
+        <p class="eyebrow">Uma distinção importante</p>
+        <h2>Nem todo conceito<br><span class="accent-yellow">virou uma feature.</span></h2>
+        <p class="lead">Os fundamentos continuam relevantes, mas a apresentação não deve atribuir ao projeto uma técnica que ele não usa diretamente.</p>
+        <div class="grid">
+          <article class="card">
+            <h3>Sem uso direto equivalente</h3>
+            <div class="pill-row">
+              <span class="pill">var</span><span class="pill">hoisting como estratégia</span>
+              <span class="pill">call / apply / bind</span><span class="pill">reduce</span>
+            </div>
+          </article>
+          <article class="card">
+            <h3>Uma ressalva: Promise.all</h3>
+            <p>Não faz parte do fluxo normal do produto. Aparece nos testes da API para verificar criações concorrentes de nomes.</p>
+            <p class="quiet">No backend, <code>this.repository</code> é usado pela instância do serviço; isso não torna <code>call</code>, <code>apply</code> ou <code>bind</code> uma técnica central.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide" aria-label="Slide 13">
+      <div class="content">
+        <p class="eyebrow">Evidências e fechamento</p>
+        <h2>Conceitos em uso.<br><span class="accent">Comportamentos testados.</span></h2>
+        <div class="grid three">
+          <article class="card">
+            <span class="number">FRONTEND</span>
+            <h3>Importação</h3>
+            <p>Testes verificam normalização e separação entre nomes válidos e rejeitados.</p>
+          </article>
+          <article class="card">
+            <span class="number">FRONTEND</span>
+            <h3>Sorteio</h3>
+            <p>Testes verificam revelação progressiva dos grupos e formatação do resultado.</p>
+          </article>
+          <article class="card">
+            <span class="number">BACKEND</span>
+            <h3>API</h3>
+            <p>Testes cobrem operações assíncronas, validação, importação e concorrência.</p>
+          </article>
+        </div>
+        <p class="big-idea" style="margin-top:30px">JavaScript transforma regras em uma experiência <span class="accent">previsível</span> — quando os dados, estados e falhas são tratados com clareza.</p>
+      </div>
+    </section>
+
+    <nav class="footer" aria-label="Navegação dos slides">
+      <span class="counter" id="counter">01 / 13</span>
+      <div class="progress-track" aria-hidden="true"><div class="progress" id="progress"></div></div>
+      <span class="hint">← → navegar · Home / End</span>
+      <div class="controls">
+        <button id="prev" type="button" aria-label="Slide anterior">←</button>
+        <button id="next" type="button" aria-label="Próximo slide">→</button>
+      </div>
+    </nav>
+  </main>
+  <script>
+    (() => {
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      const counter = document.getElementById("counter");
+      const progress = document.getElementById("progress");
+      const previous = document.getElementById("prev");
+      const next = document.getElementById("next");
+      let current = 0;
+
+      function showSlide(index) {
+        current = Math.max(0, Math.min(index, slides.length - 1));
+        slides.forEach((slide, position) => {
+          const isActive = position === current;
+          slide.classList.toggle("active", isActive);
+          slide.setAttribute("aria-hidden", String(!isActive));
+        });
+        counter.textContent = `${String(current + 1).padStart(2, "0")} / ${String(slides.length).padStart(2, "0")}`;
+        progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+        previous.disabled = current === 0;
+        next.disabled = current === slides.length - 1;
+        document.title = `${String(current + 1).padStart(2, "0")} · JavaScript em ação · UniDuniTê`;
+      }
+
+      previous.addEventListener("click", () => showSlide(current - 1));
+      next.addEventListener("click", () => showSlide(current + 1));
+      document.addEventListener("keydown", (event) => {
+        if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+          event.preventDefault();
+          showSlide(current + 1);
+        } else if (["ArrowLeft", "PageUp"].includes(event.key)) {
+          event.preventDefault();
+          showSlide(current - 1);
+        } else if (event.key === "Home") {
+          showSlide(0);
+        } else if (event.key === "End") {
+          showSlide(slides.length - 1);
+        }
+      });
+      showSlide(0);
+    })();
+  </script>
+</body>
+</html>

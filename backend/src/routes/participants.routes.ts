@@ -1,8 +1,9 @@
-const express = require("express");
-const createParticipantsController = require("../controllers/participants.controller");
+import { Router } from "express";
+import type { ParticipantsService } from "../services/participants.service";
+import { createParticipantsController } from "../controllers/participants.controller";
 
-function createParticipantsRouter(service) {
-  const router = express.Router();
+export function createParticipantsRouter(service: ParticipantsService): Router {
+  const router = Router();
   const controller = createParticipantsController(service);
 
   router.get("/", controller.list);
@@ -15,5 +16,3 @@ function createParticipantsRouter(service) {
 
   return router;
 }
-
-module.exports = createParticipantsRouter;

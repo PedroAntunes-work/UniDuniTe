@@ -5,15 +5,18 @@ Aplicação full stack para cadastrar participantes e dividi-los aleatoriamente 
 ## Stack e arquitetura
 
 - **Frontend:** React 19 com Create React App.
-- **Backend:** Node.js e Express.
-- **Persistência de testes:** arquivo `backend/db/participants.json`.
-- **Testes da API:** Jest e Supertest.
+- **Backend:** TypeScript, Node.js e Express.
+- **Persistência:** banco SQLite em `backend/db/participants.sqlite`.
+- **Validação de entrada:** Zod no limite da API, além dos tipos estáticos do TypeScript.
+- **Testes da API:** Jest, ts-jest e Supertest.
 
 O backend separa o fluxo em `router → service → repository`:
 
 - `routes`: definição dos endpoints e respostas HTTP;
-- `services`: validações e regras de negócio;
-- `repositories`: leitura e escrita do JSON.
+- `services`: regras de negócio e orquestração assíncrona;
+- `repositories`: acesso ao banco SQLite e migração inicial do JSON legado.
+
+O backend usa interfaces para os participantes e o contrato do repositório; parâmetros e retornos são tipados, incluindo `Promise<T>` nos serviços e controladores. O Zod valida em runtime os dados externos recebidos pela API — TypeScript, por si só, não valida JSON em execução.
 
 ## Pré-requisitos
 
@@ -36,6 +39,7 @@ npm run start:frontend
 A interface abre em `http://localhost:3000` e a API em `http://localhost:3001`.
 
 Copie os arquivos `.env.example` para `.env` em cada aplicação caso queira alterar portas ou URLs.
+O backend cria o banco SQLite automaticamente na primeira execução. `DATABASE_PATH` pode ser definido no `backend/.env` para escolher outro arquivo; caminhos relativos são resolvidos a partir da pasta `backend`.
 
 ## Scripts
 
@@ -45,6 +49,15 @@ Copie os arquivos `.env.example` para `.env` em cada aplicação caso queira alt
 | `npm run start:frontend` | Inicia o React em desenvolvimento |
 | `npm test` | Executa os testes da API |
 | `npm run build` | Gera o build de produção do frontend |
+| `npm --prefix backend run build` | Compila o backend TypeScript para `backend/dist` |
+| `npm --prefix backend run typecheck` | Verifica os tipos do backend e dos testes |
+
+## Benefícios da migração do backend
+
+- **Menos erros entre camadas:** contratos tipados detectam incompatibilidades entre rotas, controladores, serviços e repositório durante o desenvolvimento.
+- **Dados do domínio explícitos:** `Participant`, resultados de importação e `ParticipantsRepositoryContract` documentam as formas esperadas sem depender de comentários.
+- **Assincronismo legível:** os serviços e controladores declaram os valores resolvidos por suas `Promise`s e mantêm a sequência com `async`/`await`.
+- **Entradas confiáveis:** schemas Zod verificam corpos HTTP em runtime e mantêm os códigos e status de erro já expostos pela API.
 
 ## API de participantes
 
@@ -82,7 +95,7 @@ Resposta `201` (mesmo quando alguns nomes são rejeitados):
 }
 ```
 
-A interface aceita nomes separados por linha, vírgula ou ponto e vírgula e arquivos `.txt`/`.csv` (primeira coluna). A prévia informa nomes válidos e motivos de rejeição: duplicado na lista, já cadastrado, vazio ou com mais de 100 caracteres. A API grava todos os nomes aceitos em uma única operação.
+A interface aceita nomes separados por linha, vírgula ou ponto e vírgula e arquivos `.txt`/`.csv` (primeira coluna). A prévia informa nomes válidos e motivos de rejeição: duplicado na lista, já cadastrado, vazio ou com mais de 100 caracteres. A API valida os corpos com Zod e grava todos os nomes aceitos em uma única operação.
 
 Erros usam o formato:
 
@@ -110,4 +123,4 @@ Status previstos: `400` para requisição inválida, `404` para recurso inexiste
 
 Depois do sorteio, o resultado pode ser revelado de uma vez ou um grupo por vez. O sorteio é calculado antes da animação visual; `Pular animação` apenas revela o resultado já calculado. A animação respeita `prefers-reduced-motion`. Quando o resultado está completo, é possível editar os grupos movendo participantes por seletores, respeitando os limites mínimo e máximo, compartilhar pelo WhatsApp ou copiar o texto formatado para a área de transferência.
 
-> O JSON local é adequado para desenvolvimento e testes de baixa concorrência. A separação por repository permite trocar essa persistência por um banco de dados posteriormente.
+Na primeira inicialização, os dados de `backend/db/participants.json` são importados uma única vez para o SQLite, preservando os IDs. O arquivo JSON original não é alterado nem removido. Depois da migração, o banco SQLite passa a ser a fonte de verdade.
